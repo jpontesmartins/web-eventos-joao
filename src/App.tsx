@@ -5,9 +5,12 @@ import { DatePicker, DateValidationError, LocalizationProvider, PickerChangeHand
 import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment';
 import moment from 'moment';
 import axios from 'axios';
+import FeedbackMessage from './FeedbackMessage';
 
 
 function App() {
+
+  const API = "http://localhost:8080"
 
   const [instituicao, setInstituicao] = React.useState(0);
   const [instituicoes, setInstituicoes] = React.useState([{ id: 0, nome: "" }]);
@@ -19,11 +22,19 @@ function App() {
   const [message, setMessage] = React.useState("");
 
   const getInstituicoes = async () => {
-    const { data } = await axios({
-      url: `http://localhost:8080/instituicoes`,
-      method: 'get',
-    });
-    setInstituicoes(data);
+    try {
+      setMessage("");
+      setOpen(false);
+      const { data } = await axios({
+        url: `${API}/instituicoes`,
+        method: 'get',
+      });
+      setInstituicoes(data);
+    } catch (error) {
+      setMessage("Sem conexão com a API");
+      setOpen(true);
+      console.log(error);
+    }
   }
 
   useEffect(() => {
@@ -65,7 +76,7 @@ function App() {
 
     try {
       const resposta = await axios({
-        url: `http://localhost:8080/eventos`,
+        url: `${API}/eventos`,
         method: 'post',
         data: {
           nome: nome,
@@ -89,7 +100,6 @@ function App() {
 
   const handleChange_Instituicao = (event: SelectChangeEvent) => {
     setInstituicao(+event.target.value);
-    console.log(`ID da instituicao selecionada: ${event.target.value}`)
   };
 
   const handleChange_NomeEvento = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -104,17 +114,12 @@ function App() {
     setDataFinal(value !== null ? value.format() : "");
   }
 
-  const action = (
-    <Button size="small" style={{ color: "#CCC" }} onClick={() => setOpen(false)}>
-      Ok
-    </Button>
-  );
-
   return (
     <div className="App-header">
       <p>Web Eventos Joao</p>
       <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
         <Grid container width={700} spacing={2}>
+          
           {/* INSTITUICAO */}
           <Grid item md={6} xs={6}>
             Instituição:
@@ -169,14 +174,8 @@ function App() {
       <div>
         Listagem dos eventos
       </div>
-      <Snackbar
-        action={action}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-        open={open}
-        autoHideDuration={6000}
-        onClose={() => setOpen(false)}
-        message={message} />
-
+      
+      <FeedbackMessage message={message} open={open} setOpen={setOpen} setMessage={setMessage}/>
     </div>
   );
 }
